@@ -16,6 +16,8 @@ services:
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
       GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI}
       REDIS_ADDR: ${REDIS_ADDR}
+      OTEL_SERVICE_NAME: ${AUTH_OTEL_SERVICE_NAME}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
     env_file:
       - ./.env
     depends_on:
@@ -39,6 +41,8 @@ services:
     environment:
       CONVERTER_PORT: ${CONVERTER_PORT}
       LOG_LEVEL: ${LOG_LEVEL}
+      OTEL_SERVICE_NAME: ${CONVERTER_OTEL_SERVICE_NAME}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
     env_file:
       - ./.env
     depends_on:
@@ -89,6 +93,28 @@ services:
     networks:
       - json-to-yaml-network
 
+  collector:
+    container_name: json-to-yaml-collector
+    image: otel/opentelemetry-collector:latest
+    volumes:
+      - ./otelcol.yaml:/etc/otelcol/config.yaml
+    networks:
+      - json-to-yaml-network
+    depends_on:
+      jaeger:
+        condition: service_healthy
+
+  jaeger:
+    container_name: json-to-yaml-jaeger
+    image: jaegertracing/all-in-one:latest
+    environment:
+      JAEGER_PROPAGATION: w3c
+    ports:
+      - 16686:16686
+    healthcheck:
+      test: [CMD, wget, -q, -S, -O, "-", "localhost:14269"]
+    networks:
+      - json-to-yaml-network
 volumes:
   pg-data:
   redis:
