@@ -1,8 +1,8 @@
+import "../otel.js";
 import process from "node:process";
 import env from "../config/env.js";
 import logger from "../config/logger.js";
 import app from "./app.js";
-import "../otel.js";
 
 function exit() {
   if (app.server) {
